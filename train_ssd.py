@@ -308,7 +308,7 @@ if __name__ == '__main__':
                 if net.base_net[num_block][num_layer]._get_name() is not 'ReLU6':
                     m = prune.l1_unstructured(net.base_net[num_block][num_layer],
                                               name='weight',
-                                              amount=0.5)
+                                              amount=0.75)
                     net.base_net[num_block][num_layer] = prune.remove(m, name='weight')
         else:
             for num_layer in range(len(net.base_net[num_block].conv)):
@@ -317,7 +317,7 @@ if __name__ == '__main__':
                 if net.base_net[num_block].conv[num_layer]._get_name() is not 'ReLU6':
                     m = prune.l1_unstructured(net.base_net[num_block].conv[num_layer],
                                               name='weight',
-                                              amount=0.5)
+                                              amount=0.75)
                     net.base_net[num_block].conv[num_layer] = prune.remove(m, name='weight')
 
     pruned_net = net
@@ -355,7 +355,7 @@ if __name__ == '__main__':
     model_loss = []
     train_time = []
     val_time = []
-    condition = 'cond_5'
+    condition = 'cond_7'
     for epoch in range(last_epoch + 1, args.num_epochs):
         scheduler.step()
 
