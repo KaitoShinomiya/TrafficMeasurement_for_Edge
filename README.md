@@ -1,135 +1,37 @@
-# Single Shot MultiBox Detector Implementation in Pytorch
+# Single Shot MultiBox Detector Implementation in Pytorchを使ったエッジデバイス最適化実験
 
+## 実験条件
+特に言及のないパラメータはSSD論文準拠です。
 
-## Requires (when test)
-- Python == 3.7.9
-- Pytorch == 1.7.0
-- torchvison == 0.8.1
-- Opencv-Python == 3.4.2
+> - 学習率 : 1e-3
+>   - cosine schedulerで減衰
+> - batch size : 32
+> - num epochs : 50
 
-## Detected Demo
-### Video
-リアルタイムで動画 or カメラ入力を検出・表示する。  
+- base
+  特に追加条件なし。
+- condition 1  
+  - 量子化
+- condition 2
+  - 25% 枝刈り
+- condition 3
+  - 量子化
+  - 25% 枝刈り
+- condition 4
+  - 50% 枝刈り
+- condition 5
+  - 量子化
+  - 50% 枝刈り
+- condition 6
+  - 75% 枝刈り
+- condition 7
+  - 量子化
+  - 75% 枝刈り
 
-To Run: `run_ssd_live_demo.py <net type> <model path> <label path> [video file]`
-- net type: `vgg16-ssd`, `mb1-ssd`, `mb1-ssd-lite`, `mb2-ssd-lite` or `sq-ssd-lite`.
-  - `vgg16-ssd`     : VGG16 based SSD.
-  - `mb1-ssd`       : MobileNet based SSD.
-  - `mb1-ssd-lite`  : More lite MobileNet used. 
-  - `mb2-ssd-lite`  : MobileNetV2 lite model based SSD. 
-  - `sq-ssd-lite`   : Use SqueezeNet model.
-- model path: `path/to/model.pth`.　
-  - PASCAL VOC pretrained model is [HERE](https://drive.google.com/drive/folders/119r52hYjyroZ4XJZVeuGakXOtKcxl5fS) (vgg16, mbv1, mb2-lite are available, 頑張って探して).
-  - ほかにも卒研で作ったやつもあるから、使うなら論文読んでモデルの学習条件(cond1とか)見てね
-- lebel path: `path/to/label.txt`.
-  - If you use pretrained model, use `models/voc-model-labels.txt`.
-  - If it is your original model, make sure it is compatible with it.
-- video file (optional): `paht/to/video`. If you want to use cam, without this param. 
+## 結果：[Google Drive](https://drive.google.com/drive/folders/1k2y94lxhRNAV4x-muFMJgEmZpYmMehAx?usp=sharing)
 
-### Picture
-検出したい画像のパスを入れるか、sample_dataに入ってる画像を検出し、
-結果を`sample_data/detect_result/*_res.jpg`に出力する。
+## SSDの基本的な使い方は[こちら](https://github.com/Jeong-Labo/pytorch-ssd)
 
-To Run: `run_ssd_example.py <net type> <model path> <label path> [image path]`  
-- net type, model path, label path: Plz show above explain.
-- video file (optional): `paht/to/image`. If without this param, use `sample_data/*.jpg`.
-
-#### <専攻科研究で作った車の前後検出デモ>
-|origin image|detected image|
-|---|---|
-|![](./sample_data/car_sample.jpg)|![](./sample_data/detected_result/car_sample_res.jpg)|
-
-## Train Model
-ベースネットを選択して学習、モデルと検証時の誤差を保存する。
-
-To Run: `train_ssd.py <many options>`
-- `--dataset_type default=voc`
-  - supported `voc` or `open_images`
-- `--datasets path/to/dataset1 path/to/dataset2 ...`
-  - **Required**
-  - You can use **same type** multiple dataset.
-  - VOC dataset format is [below](#example-voc-dataset-format).
-- `--validation_dataset path/to/val_dataset`
-  - **Required**
-  - VOC dataset is managed by train_list.txt and val_list.txt. Val_data path should be the same as train_data.
-- `--net default=vgg16-ssd`
-  - vgg16, MobileNet, MobileNetlite or MobileNetV2Lite
-- `--pretrained_ssd path/to/pretrained_ssd_model`
-  - For transfer learning or model's param initialize
-- `--checkpoint_folder path/to/save_dir/default=models/`
-- `--lr default=1e-3`
-- `--num_epochs default=120`
-- `--scheduler default=multi-step`
-  - learning rate's scheduler; "multi-step" or "cosine"
-- `--num_workers <int>`
-  - torch "Dataloader" param; num of subprocess for data loading.
-  - **windowsは、0じゃないとエラー吐くかも**
-
->more info: [this repository](https://github.com/mashyko/pytorch-ssd)
-
-
-### example: VOC dataset format
-#### Basic file path
-```
-dataset --- Annotations
-         |      ├- XXX_1.xml
-         |      :
-         |
-         ├- JPEGImages
-         |      ├- XXX_1.jpg
-         |      :
-         |
-         ├- trainval_file_list.txt
-         ├- test_file_list.txt
-         └- labels.txt
-```
-
-#### Annotation.xml architecture
-```
-<annotation>
-    <object>
-        <name>label name</name>
-        <difficult>0</difficult>
-        <bndbox>
-            <xmin>123</xmin>
-            <ymin>456</ymin>
-            <xmax>789</xmax>
-            <ymax>987</ymax>
-        </bndbox>
-    </object>
-    <object>
-        :
-        
-    </object>
-      :
-      
-</annotation>
-```
-> This is minimum example. In other cases, some header may be added.
-
-#### trainval/test_file_list.txt format
-```
-XXX_1
-XXX_2
-XXX_ABC
-.
-.
-.
-```
-> File name only. File extensions are not required.
-
-#### labels.txt format
-```
-BACKGROUND  # Required
-aeroplane
-bicycle
-.
-.
-.
-```
-> The "BACKGROUND" label is mandatory.
-
-
-# Based on, LICENCE
+## Based on, LICENCE
 >Copyright (c) 2019 mashyko:　https://github.com/mashyko/pytorch-ssd  
 >MIT LICENCE: `./LICENCE`
