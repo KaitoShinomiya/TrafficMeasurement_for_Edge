@@ -8,6 +8,7 @@ import time
 from tqdm import tqdm
 
 import torch
+from torch.nn.utils import prune
 from torch.utils.data import DataLoader, ConcatDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 
@@ -37,7 +38,6 @@ parser.add_argument('--validation_dataset', help='Dataset directory path')
 parser.add_argument('--balance_data', action='store_true',
                     help="Balance training sample_data by down-sampling more frequent labels.")
 
-
 parser.add_argument('--net', default="vgg16-ssd",
                     help="The network architecture, it can be mb1-ssd, mb1-lite-ssd, mb2-ssd-lite or vgg16-ssd.")
 parser.add_argument('--freeze_base_net', action='store_true',
@@ -61,7 +61,6 @@ parser.add_argument('--base_net_lr', default=None, type=float,
                     help='initial learning rate for base net.')
 parser.add_argument('--extra_layers_lr', default=None, type=float,
                     help='initial learning rate for the layers not in base net and prediction heads.')
-
 
 # Params for loading pretrained basenet or checkpoints.
 parser.add_argument('--base_net',
@@ -87,7 +86,7 @@ parser.add_argument('--batch_size', default=32, type=int,
                     help='Batch size for training')
 parser.add_argument('--num_epochs', default=120, type=int,
                     help='the number epochs')
-workers = int(os.cpu_count()/2)
+workers = int(os.cpu_count() / 2)
 parser.add_argument('--num_workers', default=workers, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--validation_epochs', default=5, type=int,
@@ -99,7 +98,6 @@ parser.add_argument('--use_cuda', default=True, type=str2bool,
 
 parser.add_argument('--checkpoint_folder', default='models/',
                     help='Directory for saving checkpoint models')
-
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -133,8 +131,6 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         running_loss += loss.item()
         running_regression_loss += regression_loss.item()
         running_classification_loss += classification_loss.item()
-        if i:
-            print(running_loss/i, running_regression_loss/i, running_classification_loss/i)
         if i and i % debug_steps == 0:
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
@@ -207,7 +203,7 @@ if __name__ == '__main__':
     for dataset_path in args.datasets:
         if args.dataset_type == 'voc':
             dataset = VOCDataset(dataset_path, transform=train_transform, target_transform=target_transform)
-            label_file = os.path.join(args.checkpoint_folder, "car-frontback-labels.txt")
+            label_file = os.path.join(args.checkpoint_folder, "voc-model-car-frontback-labels.txt")
             store_labels(label_file, dataset.class_names)
             num_classes = len(dataset.class_names)
         elif args.dataset_type == 'open_images':
@@ -225,13 +221,16 @@ if __name__ == '__main__':
     train_dataset = ConcatDataset(datasets)
 
     logging.info("Train dataset size: {}".format(len(train_dataset)))
-    train_loader = DataLoader(train_dataset, args.batch_size, num_workers=args.num_workers, shuffle=True, drop_last=True)
+    train_loader = DataLoader(train_dataset, args.batch_size, num_workers=args.num_workers, shuffle=True,
+                              drop_last=True)
 
     logging.info("Prepare Validation datasets.")
     if args.dataset_type == "voc":
-        val_dataset = VOCDataset(args.validation_dataset, transform=test_transform, target_transform=target_transform, is_test=True)
+        val_dataset = VOCDataset(args.validation_dataset, transform=test_transform, target_transform=target_transform,
+                                 is_test=True)
     elif args.dataset_type == 'open_images':
-        val_dataset = OpenImagesDataset(dataset_path, transform=test_transform, target_transform=target_transform, dataset_type="test")
+        val_dataset = OpenImagesDataset(dataset_path, transform=test_transform, target_transform=target_transform,
+                                        dataset_type="test")
         logging.info(val_dataset)
 
     logging.info("validation dataset size: {}".format(len(val_dataset)))
@@ -275,7 +274,7 @@ if __name__ == '__main__':
             {
                 'params': itertools.chain(net.source_layer_add_ons.parameters(),
                                           net.extras.parameters()
-            ),
+                                          ),
                 'lr': extra_layers_lr
             },
             {
@@ -296,7 +295,40 @@ if __name__ == '__main__':
         net.init_from_pretrained_ssd(args.pretrained_ssd)
     logging.info(f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
 
-    net.to(DEVICE)
+    # pruning model
+    print('================ before ==================')
+    print(list(net.base_net.children())[0][0].weight[0])
+    print('==========================================')
+
+    for num_block in range(len(net.base_net)):
+        if num_block == 0 or num_block == 18:
+            for num_layer in range(len(net.base_net[num_block])):
+                # print(net.base_net[num_block][num_layer])
+                # print('**************************************')
+                if net.base_net[num_block][num_layer]._get_name() is not 'ReLU6':
+                    m = prune.l1_unstructured(net.base_net[num_block][num_layer],
+                                              name='weight',
+                                              amount=0.25)
+                    net.base_net[num_block][num_layer] = prune.remove(m, name='weight')
+        else:
+            for num_layer in range(len(net.base_net[num_block].conv)):
+                # print(net.base_net[num_block].conv[num_layer])
+                # print('**************************************')
+                if net.base_net[num_block].conv[num_layer]._get_name() is not 'ReLU6':
+                    m = prune.l1_unstructured(net.base_net[num_block].conv[num_layer],
+                                              name='weight',
+                                              amount=0.25)
+                    net.base_net[num_block].conv[num_layer] = prune.remove(m, name='weight')
+
+    pruned_net = net
+    print('================ after ==================')
+    print(list(pruned_net.base_net.children())[0][0].weight[0])
+    print('=========================================')
+
+    # モデルの動的量子化
+    pruned_net_int8 = torch.quantization.quantize_dynamic(pruned_net, dtype=torch.qint8, inplace=True)
+
+    pruned_net_int8.to(DEVICE)
     # print(net)
 
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
@@ -323,14 +355,14 @@ if __name__ == '__main__':
     model_loss = []
     train_time = []
     val_time = []
-    condition = 'base'
+    condition = 'cond_3'
     for epoch in range(last_epoch + 1, args.num_epochs):
         scheduler.step()
 
         # do train
         t_start = time.time()
         train(train_loader,
-              net,
+              pruned_net_int8,
               criterion,
               optimizer,
               device=DEVICE,
@@ -341,7 +373,7 @@ if __name__ == '__main__':
 
         # do validation
         v_start = time.time()
-        val_loss, val_regression_loss, val_classification_loss = test(val_loader, net, criterion, DEVICE)
+        val_loss, val_regression_loss, val_classification_loss = test(val_loader, pruned_net_int8, criterion, DEVICE)
         v_elapsed_time = time.time() - v_start
         val_time.append(v_elapsed_time)
 
@@ -353,8 +385,9 @@ if __name__ == '__main__':
                 f"Validation Regression Loss {val_regression_loss:.4f}, " +
                 f"Validation Classification Loss: {val_classification_loss:.4f}"
             )
-            model_path = os.path.join(args.checkpoint_folder, f"{condition}/{args.net}-Epoch-{epoch}-Loss-{val_loss:.3f}.pth")
-            net.save(model_path)
+            model_path = os.path.join(args.checkpoint_folder,
+                                      f"{condition}/{args.net}-Epoch-{epoch}-Loss-{val_loss:.3f}.pth")
+            pruned_net_int8.save(model_path)
             logging.info(f"Saved model {model_path}")
 
     # epochごとのlossを保存
