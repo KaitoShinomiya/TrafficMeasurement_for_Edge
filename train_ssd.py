@@ -391,16 +391,16 @@ if __name__ == '__main__':
             logging.info(f"Saved model {model_path}")
 
     # epochごとのlossを保存
-    with open(f'models/car_frontback/{condition}/loss_log.csv', 'w') as f:
+    with open(f'models/car_frontback/{condition}/{args.net}/loss_log.csv', 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerows(model_loss)
 
     # epochごとの学習時間を保存
-    with open(f'models/car_frontback/{condition}/train_time_log.csv', 'w') as f:
+    with open(f'models/car_frontback/{condition}/{args.net}/train_time_log.csv', 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerow(train_time)
 
     # epochごとの検出時間を保存
-    with open(f'models/car_frontback/{condition}/val_time_log.csv', 'w') as f:
+    with open(f'models/car_frontback/{condition}/{args.net}/val_time_log.csv', 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerow(val_time)
