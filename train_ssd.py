@@ -297,10 +297,14 @@ if __name__ == '__main__':
 
     # pruning model
     print('================ before ==================')
-    print(list(net.base_net.children())[0][0].weight[0])
+
+    #print(list(net.base_net.children())[0][0].weight[0])
+
     print('==========================================')
 
     for num_block in range(len(net.base_net)):
+        print(num_block)
+        print(net.base_net)
         if num_block == 0 or num_block == 18:
             for num_layer in range(len(net.base_net[num_block])):
                 # print(net.base_net[num_block][num_layer])
@@ -323,7 +327,9 @@ if __name__ == '__main__':
     pruned_net = net
     pruned_net.to(DEVICE)
     print('================ after ==================')
-    print(list(pruned_net.base_net.children())[0][0].weight[0])
+    #print(type(pruned_net.base_net.children())[0][0].weight[0])
+    #print(list(pruned_net.base_net.children())[0][0].weight[0])
+
     print('=========================================')
     # print(net)
 
@@ -387,16 +393,16 @@ if __name__ == '__main__':
             logging.info(f"Saved model {model_path}")
 
     # epochごとのlossを保存
-    with open(f'models/car_frontback/{condition}/loss_log.csv', 'w') as f:
+    with open(f'models/car_frontback/{condition}/{args.net}/loss_log.csv', 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerows(model_loss)
 
     # epochごとの学習時間を保存
-    with open(f'models/car_frontback/{condition}/train_time_log.csv', 'w') as f:
+    with open(f'models/car_frontback/{condition}/{args.net}/train_time_log.csv', 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerow(train_time)
 
     # epochごとの検出時間を保存
-    with open(f'models/car_frontback/{condition}/val_time_log.csv', 'w') as f:
+    with open(f'models/car_frontback/{condition}/{args.net}/val_time_log.csv', 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerow(val_time)
