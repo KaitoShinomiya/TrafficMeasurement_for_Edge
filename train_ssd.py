@@ -303,16 +303,16 @@ if __name__ == '__main__':
     print('==========================================')
 
     for num_block in range(len(net.base_net)):
-        if num_block == 0 or num_block == 18:
-            for num_layer in range(len(net.base_net[num_block])):
-                # print(net.base_net[num_block][num_layer])
-                # print('**************************************')
-                if net.base_net[num_block][num_layer]._get_name() is not 'ReLU6':
-                    m = prune.l1_unstructured(net.base_net[num_block][num_layer],
+        #if num_block == 0 or num_block == 18:
+        for num_layer in range(len(net.base_net[num_block])):
+            # print(net.base_net[num_block][num_layer])
+            # print('**************************************')
+            if net.base_net[num_block][num_layer]._get_name() is not 'ReLU':
+                m = prune.l1_unstructured(net.base_net[num_block][num_layer],
                                               name='weight',
                                               amount=0.25)
-                    net.base_net[num_block][num_layer] = prune.remove(m, name='weight')
-        else:
+                net.base_net[num_block][num_layer] = prune.remove(m, name='weight')
+        '''else:
             for num_layer in range(len(net.base_net[num_block].conv)):
                 # print(net.base_net[num_block].conv[num_layer])
                 # print('**************************************')
@@ -320,7 +320,7 @@ if __name__ == '__main__':
                     m = prune.l1_unstructured(net.base_net[num_block].conv[num_layer],
                                               name='weight',
                                               amount=0.25)
-                    net.base_net[num_block].conv[num_layer] = prune.remove(m, name='weight')
+                    net.base_net[num_block].conv[num_layer] = prune.remove(m, name='weight')'''
         #ReLU系の層は
     pruned_net = net
     pruned_net.to(DEVICE)
