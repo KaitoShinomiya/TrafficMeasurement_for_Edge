@@ -297,7 +297,7 @@ if __name__ == '__main__':
 
     # pruning model
     print('================ before ==================')
-    print(list(net.base_net.children())[0][0].weight[0])
+    #print(list(net.base_net.children())[0][0].weight[0])
     print('==========================================')
     for num_block in range(len(net.base_net)):
         print(num_block)
@@ -327,7 +327,7 @@ if __name__ == '__main__':
     pruned_net = net
     pruned_net.to(DEVICE)
     print('================ after ==================')
-    print(list(pruned_net.base_net.children())[0][0].weight[0])
+    #print(list(pruned_net.base_net.children())[0][0].weight[0])
     print('=========================================')
     # print(net)
 
