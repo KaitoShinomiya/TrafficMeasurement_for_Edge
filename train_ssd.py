@@ -306,6 +306,7 @@ if __name__ == '__main__':
         for num_layer in range(len(net.base_net[num_block])):
             # print(net.base_net[num_block][num_layer])
             # print('**************************************')
+
             if net.base_net[num_block][num_layer]._get_name() is not 'ReLU':
                 m = prune.l1_unstructured(net.base_net[num_block][num_layer],
                                           name='weight',
