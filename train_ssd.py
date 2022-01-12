@@ -305,25 +305,27 @@ if __name__ == '__main__':
     for num_block in range(len(net.base_net)):
         print(num_block)
         print(net.base_net)
-        if num_block == 0 or num_block == 18:
-            for num_layer in range(len(net.base_net[num_block])):
-                # print(net.base_net[num_block][num_layer])
-                # print('**************************************')
-                if net.base_net[num_block][num_layer]._get_name() is not 'ReLU6':
-                    m = prune.l1_unstructured(net.base_net[num_block][num_layer],
-                                              name='weight',
-                                              amount=0.25)
-                    net.base_net[num_block][num_layer] = prune.remove(m, name='weight')
-        else:
-            for num_layer in range(len(net.base_net[num_block].conv)):
+        #if num_block == 0 or num_block == 13:
+        for num_layer in range(len(net.base_net[num_block])):
+            # print(net.base_net[num_block][num_layer])
+            # print('**************************************')
+            if net.base_net[num_block][num_layer]._get_name() is not 'ReLU':
+                m = prune.l1_unstructured(net.base_net[num_block][num_layer],
+                                          name='weight',
+                                          amount=0.25)
+                net.base_net[num_block][num_layer] = prune.remove(m, name='weight')
+        '''else:
+            print(len(net.base_net[num_block]))　
+
                 # print(net.base_net[num_block].conv[num_layer])
                 # print('**************************************')
-                if net.base_net[num_block].conv[num_layer]._get_name() is not 'ReLU6':
+                if net.base_net[num_block].conv[num_layer]._get_name() is not 'ReLU':
                     m = prune.l1_unstructured(net.base_net[num_block].conv[num_layer],
                                               name='weight',
                                               amount=0.25)
                     net.base_net[num_block].conv[num_layer] = prune.remove(m, name='weight')
-
+        '''
+        #ReLU系の層は
     pruned_net = net
     pruned_net.to(DEVICE)
     print('================ after ==================')
@@ -393,16 +395,16 @@ if __name__ == '__main__':
             logging.info(f"Saved model {model_path}")
 
     # epochごとのlossを保存
-    with open(f'models/car_frontback/{condition}/{args.net}/loss_log.csv', 'w') as f:
+    with open(f'models/car-frontback/{condition}/{args.net}/loss_log.csv', 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerows(model_loss)
 
     # epochごとの学習時間を保存
-    with open(f'models/car_frontback/{condition}/{args.net}/train_time_log.csv', 'w') as f:
+    with open(f'models/car-frontback/{condition}/{args.net}/train_time_log.csv', 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerow(train_time)
 
     # epochごとの検出時間を保存
-    with open(f'models/car_frontback/{condition}/{args.net}/val_time_log.csv', 'w') as f:
+    with open(f'models/car-frontback/{condition}/{args.net}/val_time_log.csv', 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerow(val_time)
