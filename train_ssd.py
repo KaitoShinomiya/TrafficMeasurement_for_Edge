@@ -310,7 +310,7 @@ if __name__ == '__main__':
             if net.base_net[num_block][num_layer]._get_name() is not 'ReLU':
                 m = prune.l1_unstructured(net.base_net[num_block][num_layer],
                                           name='weight',
-                                          amount=0.25)
+                                          amount=0.50)
                 net.base_net[num_block][num_layer] = prune.remove(m, name='weight')
         '''else:
             print(len(net.base_net[num_block]))　
